@@ -467,76 +467,6 @@ int hexcmp( uint8_t * a, uint8_t * b, uint32_t a_len, uint32_t b_len )
     return ret;
 }
 
-
-
-
-
-
-/*
-int ecdh_stuff(){
-
-  unsigned char a_x[BUF_BYTES];
-  // unsigned char a_y[BUF_BYTES];
-  // unsigned char b_x[BUF_BYTES];
-  // unsigned char b_y[BUF_BYTES];
-  
-
-    mbedtls_ecp_group grp;
-    mbedtls_ecp_point qA, qB;
-    mbedtls_mpi dA, dB, zA, zB;
-    rnd_pseudo_info rnd_info;
-    
-    mbedtls_ecp_group_init( &grp );
-    mbedtls_ecp_point_init( &qA ); mbedtls_ecp_point_init( &qB );
-    mbedtls_mpi_init( &dA ); mbedtls_mpi_init( &dB );
-    mbedtls_mpi_init( &zA ); mbedtls_mpi_init( &zB );
-    memset( &rnd_info, 0x00, sizeof( rnd_pseudo_info ) );
-
-    //TODO - figure out which group to load
-    mbedtls_ecp_group_load( &grp, 1 );
-
-    mbedtls_ecdh_gen_public( &grp, &dA, &qA, &rnd_pseudo_rand, &rnd_info );
-    mbedtls_ecdh_gen_public( &grp, &dB, &qB, &rnd_pseudo_rand, &rnd_info );
-
-    mbedtls_ecdh_compute_shared( &grp, &zA, &qB, &dA,
-                                      &rnd_pseudo_rand, &rnd_info );
-
-    mbedtls_ecdh_compute_shared( &grp, &zB, &qA, &dB,
-                                      NULL, NULL );
-    int equal = mbedtls_mpi_cmp_mpi( &zA, &zB );
-
-    mbedtls_mpi_write_binary( &qA.X,   // Source MPI
-                                    a_x,   // Output buffer
-                                    BUF_BYTES );    // Output buffer size
-
-    printf("Are they equal? 0 says yes %d\n", equal);
-    //printf("Public key A is X:%d Y:%d Z:%d", qA.X, qA.Y, qA.Z);
-    
-    mbedtls_pk_encrypt()
-
-
-
-    mbedtls_ecp_group_free( &grp );
-    mbedtls_ecp_point_free( &qA ); mbedtls_ecp_point_free( &qB );
-    mbedtls_mpi_free( &dA ); mbedtls_mpi_free( &dB );
-    mbedtls_mpi_free( &zA ); mbedtls_mpi_free( &zB );
-
-
-
-
-  return 0;
-} */
-
-
-
-
-
-
-
-
-
-
-
 #define BUF_BYTES 66
 #define ELLIPTIC_CURVE MBEDTLS_ECP_DP_SECP521R1
     // Safe to use the largest buffer size
@@ -553,7 +483,7 @@ int yet_another(){
     unsigned char srv_to_cli_y[BUF_BYTES];
     const char pers[] = "ecdh";
 
-    //Since this has the context, this is probably the right way to go!! (can ecrypt and decrypt with context)
+    //Setup
     mbedtls_ecdh_init( &ctx_cli );
     mbedtls_ecdh_init( &ctx_srv );
     mbedtls_ctr_drbg_init( &ctr_drbg );
@@ -639,14 +569,6 @@ for(int i = 0; i < (int)len; i++){
     printf("%c", strx[i]);
 }
 
-// size_t publen = 0;
-// unsigned char pubbuff[256];
-// mbedtls_ecdh_make_public(&ctx_cli, &publen, pubbuff, sizeof(pubbuff), mbedtls_ctr_drbg_random, NULL);
-
-// printf("PRINTING NEW BUFFER\n");
-// for(int i = 0; i < 20; i++){
-//     printf("%c", pubbuff[i]);
-// }
 
 //AES Key generation part:
 mbedtls_aes_context aes_ctx;
@@ -681,6 +603,7 @@ printf("\n");
 //Similarly, the output of the x and y 
 
 //Decrypting:
+//TODO : Buffer sizes may not be correct. Decrypts part of the output, not everything
 unsigned char decrypted_output[128];
 mbedtls_aes_setkey_dec( &aes_ctx, key, 256 );
 mbedtls_aes_crypt_cbc(&aes_ctx, MBEDTLS_AES_DECRYPT, 48, iv, output, decrypted_output);
@@ -704,78 +627,6 @@ return 0;
                       
 }
 int ecc_keys(){
-//     struct ecc_engine_mbedtls engine;
-// 	  struct ecc_public_key pub_key1;
-//     struct ecc_private_key priv_key1;
-//      struct ecc_public_key pub_key2;
-//     struct ecc_private_key priv_key2;
-
-//     //uint8_t secret;
-//     int out_len1;
-//     int out_len2;
-// 	  uint8_t out1[ECC521_DH_SECRET_LEN * 2];
-//     uint8_t out2[ECC521_DH_SECRET_LEN * 2];
-//     int status = ecc_mbedtls_init (&engine);
-
-//     //Generates a 256 bit key, which is 32 bytes, which is 8 hex chars
-//     //WAS WORKING PRIOR TO 9/21 status = engine.base.generate_key_pair (&engine.base, ECC_KEY_LENGTH_256, &priv_key, &pub_key);
-
-
-//     //The context of the keys is of type mbedtls_pk_context
-//     //Try to adjust to the 256 version
-//     status = engine.base.init_key_pair (&engine.base, ECC521_PRIVKEY_DER, ECC521_PRIVKEY_DER_LEN,
-// 		  &priv_key1, &pub_key1);
-
-//     status = engine.base.init_key_pair (&engine.base, ECC521_PRIVKEY_DER, ECC521_PRIVKEY_DER_LEN,
-// 		  &priv_key2, &pub_key2);
-//     public = pub_key1;
-//     private = priv_key1;
-
-//     const mbedtls_pk_context* fullKey = pub_key1.context;
-//     //const mbedtls_pk_info_t * fullInfo = fullKey->pk_info;
-//     printf("Key ctx is  %p\n", fullKey->pk_ctx);
-//     printf("Key info is %p\n", fullKey->pk_info);
-
-//     //Note : Just printing out key.context is the same as key.context.pk_ctx
-//     //Next task : use shared key to encrupt and decrypt
-
-//     //Also : write up     how to run this code
-//     //ALSO : SEND RAKESH ANY CHANGES TO THE CODE
-//     //Also : Set up a common github repo
-//     //Next next week : sending it over server
-
-//     out_len1 = engine.base.compute_shared_secret (&engine.base, &priv_key1, &pub_key2, out1,
-// 		sizeof (out1));
-//     out_len2 = engine.base.compute_shared_secret (&engine.base, &priv_key2, &pub_key1, out2,
-// 		sizeof (out2));
-
-    
-
-
-//     // printf("about to print out the secret\n");
-//     // for(int i = 0; i < out_len1; i++){
-//     //   printf("%x", out1[i]);
-//     //   if(out1[i] != out2[i]){
-//     //     printf("secret is NOT the same!");
-//     //   }
-//     // }
-//     // printf("\n");
-
-//     // for(int i = 0; i < out_len2; i++){
-//     //   printf("%x", out2[i]);
-//     // }
-//     // printf("\n");
-
-
-//     //It works!
-//     engine.base.release_key_pair (&engine.base, &priv_key1, &pub_key1);
-//     ecc_mbedtls_release (&engine); //<- No segfault here  
-
-
-
-//   //mbedtls_ecp_keypair key;
-//   //mbedtls_ecp_keypair_init(&key);
-//   //printf("%d is NEW public key", *(key.Q.X.p));
     yet_another();
     return 0;
 }
