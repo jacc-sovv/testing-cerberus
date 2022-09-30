@@ -24,6 +24,7 @@
 #include "state_manager/state_manager_all_tests.h"
 #include "system/system_all_tests.h"
 #include "tpm/tpm_all_tests.h"
+#include "jack_update/makekeys_test.h"
 
 
 /**
@@ -35,6 +36,7 @@
  */
 void add_all_core_tests (CuSuite *suite)
 {
+	add_all_makekeys_tests (suite);
 	add_all_attestation_tests (suite);
 	add_all_cmd_interface_tests (suite);
 	add_all_common_tests (suite);
@@ -53,6 +55,8 @@ void add_all_core_tests (CuSuite *suite)
 	add_all_state_manager_tests (suite);
 	add_all_system_tests (suite);
 	add_all_tpm_tests (suite);
+	
+	
 
 	/* Test coverage for platform abstractions. */
 #if (defined TESTING_RUN_PLATFORM_SEMAPHORE_SUITE || \
