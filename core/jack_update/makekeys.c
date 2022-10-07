@@ -474,7 +474,7 @@ int hexcmp( uint8_t * a, uint8_t * b, uint32_t a_len, uint32_t b_len )
 // Size of buffer used to translate mbed TLS error codes into a string representation
 
 int yet_another(){
-    mbedtls_ecdh_context ctx_cli, ctx_srv;
+mbedtls_ecdh_context ctx_cli, ctx_srv;
     mbedtls_entropy_context entropy;
     mbedtls_ctr_drbg_context ctr_drbg;
     unsigned char cli_to_srv_x[BUF_BYTES];
@@ -483,7 +483,7 @@ int yet_another(){
     unsigned char srv_to_cli_y[BUF_BYTES];
     const char pers[] = "ecdh";
 
-    //Setup
+    //Since this has the context, this is probably the right way to go!! (can ecrypt and decrypt with context)
     mbedtls_ecdh_init( &ctx_cli );
     mbedtls_ecdh_init( &ctx_srv );
     mbedtls_ctr_drbg_init( &ctr_drbg );
@@ -535,9 +535,37 @@ int yet_another(){
 mbedtls_mpi_lset( &ctx_cli.Qp.Z, 1 );    
 mbedtls_mpi_read_binary( &ctx_cli.Qp.X, srv_to_cli_x, BUF_BYTES );
 mbedtls_mpi_read_binary( &ctx_cli.Qp.Y, srv_to_cli_y, BUF_BYTES );
+//Use mbedtls_ecp_point_read_string to make Qp1, see if that's the same as Qp after we generate shared secret
 
+//This writes our Qp into a character buffer
+size_t x_len;
+unsigned char xbuff[1000];
+mbedtls_ecp_point_write_binary(&ctx_cli.grp, &ctx_cli.Qp, MBEDTLS_ECP_PF_COMPRESSED, &x_len, xbuff, sizeof(xbuff));
+
+//TODO - Convert to hex format from binary
+//Use this character buffer to compute a new point, check the shared secret, be sure they are same
+printf("About to print XBUFF\n");
+for(int i = 0; i < (int)x_len; i++){
+    printf("%c", xbuff[i]);
+}
+printf("\n");
+
+//This tests that the character buffer is sufficient, and we can generate a new point from that character buffer.
+mbedtls_ecp_point testPoint;
+mbedtls_ecp_point_init(&testPoint);
+mbedtls_ecp_point_read_binary(&ctx_cli.grp, &testPoint, xbuff, x_len);
+
+
+//This tests that our new public key is equivalent to the old one, generates a shared secret
 mbedtls_ecdh_compute_shared( &ctx_cli.grp, &ctx_cli.z, &ctx_cli.Qp, &ctx_cli.d,
                                        mbedtls_ctr_drbg_random, &ctr_drbg );
+
+
+//Overrides other server shared secret to test that our new public key generates a correct sared secret
+// mbedtls_ecdh_compute_shared( &ctx_cli.grp, &ctx_srv.z, &testPoint, &ctx_cli.d,
+//                                        mbedtls_ctr_drbg_random, &ctr_drbg );
+
+
 
 //Great! Now ctx_cli.z is a point representing the shared secret, it has it's own X and Y coords.
     char strz[512];
@@ -545,13 +573,6 @@ mbedtls_ecdh_compute_shared( &ctx_cli.grp, &ctx_cli.z, &ctx_cli.Qp, &ctx_cli.d,
     int stat = mbedtls_mpi_write_string(&ctx_cli.z, 10, strz, sizeof(strz), &len);
     if(stat != 0){
         printf("Stat not 0 while doing z!\n");
-    }
-
-    char strx[1000];
-
-    stat = mbedtls_mpi_write_string(&ctx_cli.Qp.X, 10, strx, sizeof(strx), &len);
-        if(stat != 0){
-        printf("Stat not 0 while doing x!\n");
     }
     
 
@@ -564,11 +585,16 @@ for(int i = 0; i < (int)len; i++){
     printf("%c", strz[i]);
 }
 printf("\n");
-printf("About to print out the X coordinate with size %d\n", (int)len);
-for(int i = 0; i < (int)len; i++){
-    printf("%c", strx[i]);
-}
 
+
+// size_t publen = 0;
+// unsigned char pubbuff[256];
+// mbedtls_ecdh_make_public(&ctx_cli, &publen, pubbuff, sizeof(pubbuff), mbedtls_ctr_drbg_random, NULL);
+
+// printf("PRINTING NEW BUFFER\n");
+// for(int i = 0; i < 20; i++){
+//     printf("%c", pubbuff[i]);
+// }
 
 //AES Key generation part:
 mbedtls_aes_context aes_ctx;
@@ -603,7 +629,6 @@ printf("\n");
 //Similarly, the output of the x and y 
 
 //Decrypting:
-//TODO : Buffer sizes may not be correct. Decrypts part of the output, not everything
 unsigned char decrypted_output[128];
 mbedtls_aes_setkey_dec( &aes_ctx, key, 256 );
 mbedtls_aes_crypt_cbc(&aes_ctx, MBEDTLS_AES_DECRYPT, 48, iv, output, decrypted_output);
@@ -621,8 +646,6 @@ for(int i = 0; i < 48; i++){
 
 // mbedtls_pk_encrypt(&ctx_cli, arr, 8, out, BUF_BYTES, BUF_BYTES, rnd_std_rand, NULL);
 return 0;
-
-
 
                       
 }
